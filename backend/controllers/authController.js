@@ -1,12 +1,13 @@
 import Joi from "joi";
-import User from "../models/user.js";
 import bcrypt from "bcryptjs";
-import userDTO from "../DTO/userDTO.js";
+import User from "../models/user.js";
+import UserDTO from "../DTO/userDTO.js";
 const passwordPattren =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[ -/:-@\[-`{-~]).{6,64}$/;
 const authController = {
   async register(req, res, next) {
-    //1.validate the user input using joi module
+    //validate user input
+
     const userRegisterSchema = Joi.object({
       username: Joi.string().min(5).max(30).required(),
       name: Joi.string().max(30).required(),
@@ -14,16 +15,16 @@ const authController = {
       password: Joi.string().pattern(passwordPattren).required(),
       confirmpassword: Joi.ref("password"),
     });
-    //validating data
+    //validate the schema
     const { error } = userRegisterSchema.validate(req.body);
-    //if error occurs handling it using middleware
 
     if (error) {
       return next(error);
     }
-    //verifing email and username is already used?
     const { username, name, email, password } = req.body;
-    let user;
+    //password hashing
+    const hashedPassword = await bcrypt.hash(password, 10);
+    //verifiying email and username already exsists
     try {
       const emailInUse = await User.exists({ email });
       const usernameInUse = await User.exists({ username });
@@ -31,20 +32,23 @@ const authController = {
       if (emailInUse) {
         const error = {
           status: 409,
-          message: "email is already in use please use another!",
+          message: "email already taken please use anOther email!!",
         };
         return next(error);
       }
       if (usernameInUse) {
         const error = {
           status: 409,
-          message: "username is not available please  choose another!!!",
+          message: "userName is not available please choose anOther username!!",
         };
         return next(error);
       }
-      //password hashing
-      const hashedPassword = await bcrypt.hash(password, 10);
-      //store in database
+    } catch (error) {
+      next(error);
+    }
+    //store in database
+    let user;
+    try {
       const userToRegister = new User({
         username,
         name,
@@ -53,38 +57,42 @@ const authController = {
       });
       user = await userToRegister.save();
     } catch (error) {
-      return next(error);
+      next(error);
     }
-    res.status(201).json(user);
+    //setting the data object transfer
+    const userDto = new UserDTO(user);
+    res.status(201).json({ user: userDto });
   },
 
-  //login method
+  //login router
 
   async login(req, res, next) {
-    //validate data
+    //validate user input
+
     const userLoginSchema = Joi.object({
       username: Joi.string().min(5).max(30).required(),
       password: Joi.string().pattern(passwordPattren).required(),
     });
-
-    //validate user data
+    //validate the userLoginSchema
     const { error } = userLoginSchema.validate(req.body);
-    //handle error using middleware
+
     if (error) {
       return next(error);
     }
-    //fetching username and password
-    let user;
+    //checking if the username is registerd or not
     const { username, password } = req.body;
+    let user;
     try {
       user = await User.findOne({ username });
       if (!user) {
         const error = {
           status: 401,
-          message: "invalid username!",
+          messge: "invalid username!!",
         };
         return next(error);
       }
+      //matching password
+
       const match = await bcrypt.compare(password, user.password);
       if (!match) {
         const error = {
@@ -96,8 +104,8 @@ const authController = {
     } catch (error) {
       return next(error);
     }
-    //using DTO
-    const userDto = new userDTO(user);
+    //setting data object tranfer
+    const userDto = new UserDTO(user);
     res.status(200).json({ user: userDto });
   },
 };

@@ -6,7 +6,7 @@ const errorHandler = (error, req, res, next) => {
   //default state
   let status = 500;
   let data = {
-    message: "internal server error!",
+    message: "internal server error",
   };
   if (error instanceof ValidationError) {
     status = 401;
@@ -14,14 +14,13 @@ const errorHandler = (error, req, res, next) => {
 
     return res.status(status).json(data);
   }
-  if (error.status) {
-    status = error.status;
-  }
   if (error.message) {
     data.message = error.message;
   }
-
-  return res.status(status).json(data);
+  if (error.status) {
+    status = error.status;
+  }
+  res.status(status).json(data);
 };
 
 export default errorHandler;

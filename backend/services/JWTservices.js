@@ -1,37 +1,36 @@
 import jwt from "jsonwebtoken";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../config";
-import Refreshtoken from "../models/jwt.js";
-
-class JWTServices {
-  //sign Access Token
-  signAccessToken(payload, expiryTime) {
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../config/index.js";
+import RefreshToken from "../models/jwt.js";
+class JWTService {
+  //signAccess token
+  static signAccessToken(payload, expiryTime) {
     return jwt.sign(payload, ACCESS_TOKEN, { expiresIn: expiryTime });
   }
-  //sign Refresh token
-  signRefreshToken(payload, expiryTime) {
+  //signRefresh token
+  static signRefreshToken(payload, expiryTime) {
     return jwt.sign(payload, REFRESH_TOKEN, { expiresIn: expiryTime });
   }
-  //verify Access token
-  verifyAccessToken(token) {
+
+  //verifyAccess token
+  static verifyAccessToken(token) {
     return jwt.verify(token, ACCESS_TOKEN);
   }
-  //verify Refresh token
-  verifyRefreshToken(token) {
+  //verifyRefresh token
+  static verifyRefreshToken(token) {
     return jwt.verify(token, REFRESH_TOKEN);
   }
-  //store refresh token
-  async storeRefreshToken(token, userId) {
+  //store Refresh token into database
+  static async storeRefreshToken(token, userId) {
     try {
-      const refreshToken = new Refreshtoken({
+      const newToken = new RefreshToken({
         token: token,
         userId: userId,
       });
-
-      await refreshToken.save();
+      await newToken.save();
     } catch (error) {
-      return console.log(error);
+      console.log(error);
     }
   }
 }
 
-export default JWTServices;
+export default JWTService;

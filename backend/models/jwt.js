@@ -2,13 +2,14 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const jwtTokenSchema = Schema(
+const JwtSchema = Schema(
   {
     token: { type: String, required: true },
-    userId: { type: String, requird: true },
+    userId: { type: String, required: true },
   },
   {
     timestamps: true,
   }
 );
-export default mongoose.model("Refreshtoken", jwtTokenSchema, "token");
+
+export default mongoose.model("RefreshToken", JwtSchema, "tokens");
